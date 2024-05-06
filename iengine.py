@@ -15,7 +15,6 @@ import networkx as nx
 def TT():
     return True
 
-
 # Forward chaining
 def FC():
     return True
@@ -25,6 +24,24 @@ def FC():
 def BC():
     return True
 
+#Kwonledgement base
+def KB():
+    return True
+
+#load text file
+def load_file(filename):
+    with open(filename, 'r') as f:
+        lines = f.readlines()   
+    return lines
+
+#parse the text file
+def parse_file(lines):
+    kb = []
+    for line in lines:
+        line = line.strip()
+        if line:
+            kb.append(line)
+    return kb
 
 def main():
     if len(sys.argv) != 3:
