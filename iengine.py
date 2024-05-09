@@ -51,16 +51,14 @@ def TT(kb, query):
         if all(kb_truth_values):
             # Increment model count if KB is true under current assignment
             models += 1
-
-            # Evaluate the query under the current assignment
+            # # Evaluate the query under the current assignment
             query_truth_value = evaluate_clause(query, assignment)
 
             # If the query is true under the current assignment, return YES and the number of models
             if query_truth_value:
                 return f"YES: {models}"
-
-    # If no assignment satisfies the KB and query, return NO
-    return "NO"
+    else:
+        return "NO"
 
 
 # Forward chaining
@@ -105,15 +103,6 @@ def BC():
 #         lines = f.readlines()   
 #     return lines
 
-# #parse the text file
-# def parse_file(lines):
-#     kb = []
-#     for line in lines:
-#         line = line.strip()
-#         if line:
-#             kb.append(line)
-#     return kb
-
 
 def parse_TT(filename):
     with open(filename, 'r') as file:
@@ -132,6 +121,21 @@ def parse_TT(filename):
         return clauses, query
     else:
         raise ValueError("The file format is incorrect or the content is missing")
+
+#jenn's code section
+def parse_file(filename):
+    with open(filename, 'r') as f:
+        lines = f.readlines()   
+
+    kb = []
+    for line in lines:
+        line = line.strip()
+        if line and not line.startswith("ASK"):
+            kb.append(line)
+        elif line.startswith("ASK"):
+            query = line.split(" ")[1]
+
+    return kb, query
 
 
 def main():
