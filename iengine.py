@@ -134,7 +134,6 @@ def parse_TT(filename):
         raise ValueError("The file format is incorrect or the content is missing")
 
 
-
 def main():
     if len(sys.argv) != 3:
         print("Usage: python3 iengine.py <filename> <search_method>")
