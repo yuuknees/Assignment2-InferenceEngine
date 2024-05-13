@@ -1,7 +1,5 @@
 import sys
-import heapq
 import itertools
-import random
 from collections import defaultdict, Counter
 import networkx as nx
 import re
@@ -29,20 +27,24 @@ def evaluate_clause(clause, assignment):
 
 
 def TT(kb, query):
+#Checks the tt for a given knowledge base and query
+
     # Extract symbols mentioned in KB clauses and the query
+    symbols = set()
     kb_symbols = sorted(set().union(*(re.findall(r'\b[A-Za-z]+\b', clause) for clause in kb)))
     query_symbols = sorted(set(re.findall(r'\b[A-Za-z]+\b', query)))
     symbols = sorted(set(kb_symbols + query_symbols))
 
     # Generate all possible combinations of truth values for symbols
-    truth_assignments = itertools.product([False, True], repeat=len(symbols))
+    truth_table = list(itertools.product([False, True], repeat=len(symbols)))
+    symbol_list = list(symbols)
 
     # Initialize variables for counting models and checking entailment
     models = 0
 
     # Check truth table
-    for assignment_values in truth_assignments:
-        assignment = dict(zip(symbols, assignment_values))
+    for assignment_values in truth_table:
+        assignment = dict(zip(symbol_list, assignment_values))
 
         # Evaluate each clause in the KB
         kb_truth_values = [evaluate_clause(clause, assignment) for clause in kb]
@@ -96,13 +98,6 @@ def FC(kb, query):
 # Backward chaining
 def BC():
     return True
-
-# # #load text file
-# def load_file(filename):
-#     with open(filename, 'r') as f:
-#         lines = f.readlines()   
-#     return lines
-
 
 def parse_TT(filename):
     with open(filename, 'r') as file:
