@@ -93,8 +93,25 @@ def FC(kb, query):
 
 
 # Backward chaining
-def BC():
-    return True
+def BC(kb, query):
+    inferred = defaultdict(bool)  # Stores whether a symbol is inferred
+    agenda = [query]  # Initialize the agenda with the query
+
+    # Step 1: Main loop
+    while agenda:
+        q = agenda.pop(0)  # Get the first symbol from the agenda
+        if q not in inferred or not inferred[q]:  # If q is not already inferred
+            inferred[q] = True
+            # Step 2: Find premises that entail q
+            premises = [clause.split("=>")[0].strip() for clause in kb if "=>" in clause and q == clause.split("=>")[1].strip()]
+            for premise in premises:
+                # If all symbols in the premise are already inferred, add the premise to the agenda
+                if all(symbol in inferred and inferred[symbol] for symbol in premise.split("&")):
+                    agenda.append(premise)
+    # Step 3: Generate the result based on inferred symbols
+    inferred_symbols = [symbol for symbol in inferred.keys() if inferred[symbol]]
+    return inferred_symbols
+
 
 def parse_TT(filename):
     with open(filename, 'r') as file:
