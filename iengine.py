@@ -63,7 +63,7 @@ def TT(kb, query):
         return "NO"
 
 
-# Forward chaining
+# Forward chaining - fix: BAD BAD BAD BADDD
 def FC(kb, query):
     inferred = defaultdict(bool)  # Stores whether a symbol is inferred
     count = Counter()  # Counts how many premises of each rule are satisfied
@@ -92,7 +92,7 @@ def FC(kb, query):
     return "NO"  # If the query cannot be inferred
 
 
-# Backward chaining
+# Backward chaining - fix: only prints out one
 def BC(kb, query):
     inferred = defaultdict(bool)  # Stores whether a symbol is inferred
     agenda = [query]  # Initialize the agenda with the query
@@ -115,22 +115,20 @@ def BC(kb, query):
 
 def parse_TT(filename):
     with open(filename, 'r') as file:
-        content = file.read()
+        content = file.read().strip()
 
-    # Extract the kb and query
-    match = re.search(r"TELL\s+(.*?)(;|$)", content, re.DOTALL)
-    query_match = re.search(r"ASK\s+(.*)", content)
+    # Find TELL and ASK blocks
+    tell_index = content.index("TELL") + len("TELL")
+    ask_index = content.index("ASK")
     
-    if match and query_match:
-        kb = match.group(1).strip().split(';')
-        query = query_match.group(1).strip()
-
-        # Process the knowledge base to split into individual clauses
-        clauses = [clause.strip() for clause in kb if clause.strip()]
-        return clauses, query
-    else:
-        raise ValueError("The file format is incorrect or the content is missing")
-
+    # Extract and process clauses from TELL block
+    clauses_text = content[tell_index:ask_index].strip()
+    clauses = [clause.strip().replace(" ", "") for clause in clauses_text.split(';') if clause.strip()]
+    
+    # Extract the query from ASK block
+    query = content[ask_index + len("ASK"):].strip()
+    
+    return clauses, query
 
 def main():
     if len(sys.argv) != 3:
