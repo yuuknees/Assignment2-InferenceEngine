@@ -92,9 +92,6 @@ def FC(kb, query):
     return "NO"  # If the query cannot be inferred
 
 
-
-
-
 # Backward chaining
 def BC():
     return True
@@ -116,21 +113,6 @@ def parse_TT(filename):
         return clauses, query
     else:
         raise ValueError("The file format is incorrect or the content is missing")
-
-#jenn's code section
-def parse_file(filename):
-    with open(filename, 'r') as f:
-        lines = f.readlines()   
-
-    kb = []
-    for line in lines:
-        line = line.strip()
-        if line and not line.startswith("ASK"):
-            kb.append(line)
-        elif line.startswith("ASK"):
-            query = line.split(" ")[1]
-
-    return kb, query
 
 
 def main():
