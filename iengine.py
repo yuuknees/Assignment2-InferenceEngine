@@ -12,27 +12,29 @@ import re
 # Step 5: Check if the query is true in these configs
 # Output: Yes (how many configurations is it true?) or No (nothing else here)
 
-# class KnowledgeBase:
-#     def __init__(self):
-#         self.clauses = set()
-#         self.rules = []
-
-
 def evaluate_clause(clause, assignment):
-    if "=>" in clause:
-        antecedent, consequent = clause.split("=>")
-        return not antecedent.strip() or (antecedent.strip() and assignment.get(antecedent.strip(), False)) == assignment.get(consequent.strip(), False)
-    else:
-        return clause.strip() and assignment.get(clause.strip(), False)
+    # Evaluate a single clause based on the truth assignment
+    # Returns True if the clause is true under the assignment, otherwise False
+    if '=>' in clause:  # Implication
+        antecedent, consequent = clause.split('=>')
+        antecedent = antecedent.strip()
+        consequent = consequent.strip()
+        if antecedent not in assignment:
+            return True  # Implication is vacuously true if antecedent is not in assignment
+        return not assignment[antecedent] or assignment.get(consequent, False)
+    elif '&' in clause:  # Conjunction
+        symbols = [symbol.strip() for symbol in clause.split('&')]
+        return all(assignment.get(symbol, False) for symbol in symbols)
+    else:  # Single proposition
+        prop = clause.strip()
+        return assignment.get(prop, False)
 
 
 def TT(kb, query):
-#Checks the tt for a given knowledge base and query
-
     # Extract symbols mentioned in KB clauses and the query
     symbols = set()
-    kb_symbols = sorted(set().union(*(re.findall(r'\b[A-Za-z]+\b', clause) for clause in kb)))
-    query_symbols = sorted(set(re.findall(r'\b[A-Za-z]+\b', query)))
+    kb_symbols = sorted(set().union(*(clause.split() for clause in kb)))
+    query_symbols = sorted(set(query.split()))
     symbols = sorted(set(kb_symbols + query_symbols))
 
     # Generate all possible combinations of truth values for symbols
@@ -53,7 +55,7 @@ def TT(kb, query):
         if all(kb_truth_values):
             # Increment model count if KB is true under current assignment
             models += 1
-            # # Evaluate the query under the current assignment
+            # Evaluate the query under the current assignment
             query_truth_value = evaluate_clause(query, assignment)
 
             # If the query is true under the current assignment, return YES and the number of models
