@@ -37,8 +37,8 @@ def parse_input(filename):
     query = content[1].strip()
     clauses = [clause.strip() for clause in kb_raw.split(';') if clause.strip()]
     
-    print("Parsed clauses:", clauses)
-    print("Parsed query:", query)
+    # print("Parsed clauses:", clauses)
+    # print("Parsed query:", query)
     return clauses, query
 
 
@@ -47,7 +47,7 @@ def TT(kb, query):
     symbols = sorted(set(re.findall(r'\b[A-Za-z]+\b', ' '.join(kb) + ' ' + query)))
     truth_table = list(itertools.product([False, True], repeat=len(symbols)))
     symbol_list = list(symbols)
-    print("Symbols:", symbols)  # Verify the extracted symbols
+    #print("Symbols:", symbols)  # Verify the extracted symbols
 
     models_where_kb_and_query_true = 0
     models_where_kb_true = 0
@@ -57,49 +57,66 @@ def TT(kb, query):
         kb_truth_values = [evaluate_clause(clause, assignment) for clause in kb]
         query_truth_value = evaluate_clause(query, assignment)
         # Add this print statement to see the results for each model
-        print(f"Assignment: {assignment}, KB Truths: {kb_truth_values}, Query: {query_truth_value}")
+        # print(f"Assignment: {assignment}, KB Truths: {kb_truth_values}, Query: {query_truth_value}")
 
         if all(kb_truth_values):
             models_where_kb_true += 1
             if query_truth_value:
                 models_where_kb_and_query_true += 1
 
-    print(f"Models where KB is true: {models_where_kb_true}, Models where both KB and Query are true: {models_where_kb_and_query_true}")
+    #print(f"Models where KB is true: {models_where_kb_true}, Models where both KB and Query are true: {models_where_kb_and_query_true}")
     if models_where_kb_true > 0 and models_where_kb_and_query_true == models_where_kb_true:
         return f"YES: {models_where_kb_and_query_true}"
     else:
         return "NO"
-
+    
 
 def FC(kb, query):
-    inferred = defaultdict(bool)  # Stores whether a symbol is inferred
-    count = Counter()  # Counts how many premises of each rule are satisfied
+    agenda = []
+    inferred = defaultdict(bool)
+    count = Counter()
 
-    # Step 1: Initialize agenda with symbols known to be true
-    agenda = [symbol for symbol in kb if "=>" not in symbol and evaluate_clause(symbol, {})]
+    for clause in kb:
+        if "=>" not in clause:
+            agenda.append(clause.strip())
+            inferred[clause.strip()] = True
 
-    # Step 2: Main loop
+    implications = []
+    for clause in kb:
+        if "=>" in clause:
+            antecedent, consequent = clause.split("=>")
+            antecedent = frozenset(map(str.strip, antecedent.strip().split('&')))
+            consequent = consequent.strip()
+            implications.append((antecedent, consequent))
+            count[(antecedent, consequent)] = len(antecedent)
+
     while agenda:
-        p = agenda.pop(0)  # Get the first symbol from the agenda
-        if p == query:  # If the query is inferred, return YES
-            inferred_symbols = [symbol for symbol in inferred.keys() if inferred[symbol]]
-            return "YES: " + ", ".join(inferred_symbols)
-        if not inferred[p]:  # If the symbol is not already inferred
-            inferred[p] = True
-            # Step 3: For each implication containing p in the premise
-            for clause in kb:
-                if "=>" in clause and p in clause.split("=>")[0]:
-                    count[clause] += 1
-                    # If all premises are satisfied, infer the consequent
-                    if count[clause] == clause.split("=>")[0].count(" ") + 1:
-                        q = clause.split("=>")[1].strip()
-                        agenda.append(q)
-                        inferred[q] = True  # Mark the consequent as inferred
+        p = agenda.pop(0)
+        for antecedent, consequent in implications:
+            if p in antecedent:
+                count[(antecedent, consequent)] -= 1
+                if count[(antecedent, consequent)] == 0:
+                    if not inferred[consequent]:
+                        inferred[consequent] = True
+                        agenda.append(consequent)
 
-    return "NO"  # If the query cannot be inferred
+    # After agenda is empty, we check if the query was inferred
+    if inferred[query]:
+        return f"YES: {', '.join(sorted(k for k, v in inferred.items() if v))}"
+    return "NO"
 
 
-# Backward chaining - fix: only prints out one
+'''
+    ~ Backward chaining pseudocode ~
+    function backwardChaining(query, knowledgeBase):
+        if query is true:
+            return true
+        for rule in knowledgeBase:
+            if rule.conclusion == query:
+                if backwardChaining(rule.antecedent, knowledgeBase):
+                    return true
+        return false
+'''
 def BC(kb, query):
     inferred = defaultdict(bool)  # Stores whether a symbol is inferred
     agenda = [query]  # Initialize the agenda with the query
@@ -112,12 +129,13 @@ def BC(kb, query):
             # Step 2: Find premises that entail q
             premises = [clause.split("=>")[0].strip() for clause in kb if "=>" in clause and q == clause.split("=>")[1].strip()]
             for premise in premises:
-                # If all symbols in the premise are already inferred, add the premise to the agenda
+                # If all symbols in the premise are already inferred, return true
                 if all(symbol in inferred and inferred[symbol] for symbol in premise.split("&")):
-                    agenda.append(premise)
-    # Step 3: Generate the result based on inferred symbols
-    inferred_symbols = [symbol for symbol in inferred.keys() if inferred[symbol]]
-    return inferred_symbols
+                    return True  # The query is proven true
+                else:
+                    agenda.append(premise)  # Add the premise to the agenda
+    # Step 3: If the loop completes without returning true, the query cannot be proven true
+    return False
     
 def main():
     if len(sys.argv) != 3:
@@ -125,7 +143,7 @@ def main():
         sys.exit(1)
 
     filename, search_method = sys.argv[1], sys.argv[2]
-    print(f"Running with filename: {filename} and method: {search_method}")
+    # print(f"Running with filename: {filename} and method: {search_method}")
     clauses, query = parse_input(filename)
 
     if search_method == 'TT':
