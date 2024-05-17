@@ -4,6 +4,7 @@ import itertools
 from collections import defaultdict, Counter
 import networkx as nx
 
+# Evaluate the truth value of a clause based on the current assignment
 def evaluate_clause(clause, assignment):
     if "=>" in clause:
         # Splitting the clause into antecedent (left of '=>') and consequent (right of '=>')
@@ -20,10 +21,13 @@ def evaluate_clause(clause, assignment):
         # Directly return the truth value of the proposition for facts
         return assignment.get(clause.strip(), True)
 
+
+# Parse the input file to extract clauses and query
 def parse_input(filename):
+    # Read the content of the file and split the sections based on 'ASK'
     with open(filename, 'r') as file:
         content = file.read().split('ASK')
-        
+    
     if len(content) < 2:
         print("Error: Incorrect file format. 'ASK' section not found.")
         sys.exit(1)
@@ -37,17 +41,17 @@ def parse_input(filename):
     query = content[1].strip()
     clauses = [clause.strip() for clause in kb_raw.split(';') if clause.strip()]
     
-    # print("Parsed clauses:", clauses)
-    # print("Parsed query:", query)
+    #print("Parsed clauses:", clauses) #Debug uncomment to see the parsed clauses
+    #print("Parsed query:", query) #Debug uncomment to see the parsed clauses and query
     return clauses, query
 
 
-
+#Truth Table Method
 def TT(kb, query):
     symbols = sorted(set(re.findall(r'\b[A-Za-z]+\b', ' '.join(kb) + ' ' + query)))
     truth_table = list(itertools.product([False, True], repeat=len(symbols)))
     symbol_list = list(symbols)
-    #print("Symbols:", symbols)  # Verify the extracted symbols
+    #print("Symbols:", symbols)  # Debug verify the extracted symbols
 
     models_where_kb_and_query_true = 0
     models_where_kb_true = 0
@@ -56,21 +60,21 @@ def TT(kb, query):
         assignment = dict(zip(symbol_list, assignment_values))
         kb_truth_values = [evaluate_clause(clause, assignment) for clause in kb]
         query_truth_value = evaluate_clause(query, assignment)
-        # Add this print statement to see the results for each model
-        # print(f"Assignment: {assignment}, KB Truths: {kb_truth_values}, Query: {query_truth_value}")
+        # print(f"Assignment: {assignment}, KB Truths: {kb_truth_values}, Query: {query_truth_value}") #Debug to see the results for each model
 
         if all(kb_truth_values):
             models_where_kb_true += 1
             if query_truth_value:
                 models_where_kb_and_query_true += 1
 
-    #print(f"Models where KB is true: {models_where_kb_true}, Models where both KB and Query are true: {models_where_kb_and_query_true}")
+    #print(f"Models where KB is true: {models_where_kb_true}, Models where both KB and Query are true: {models_where_kb_and_query_true}") #Debug to see the final counts
     if models_where_kb_true > 0 and models_where_kb_and_query_true == models_where_kb_true:
         return f"YES: {models_where_kb_and_query_true}"
     else:
         return "NO"
     
 
+#Forward Chaining Method
 def FC(kb, query):
     agenda = []
     inferred = defaultdict(bool)
@@ -117,33 +121,61 @@ def FC(kb, query):
                     return true
         return false
 '''
-def BC(kb, query):
-    inferred = defaultdict(bool)  # Stores whether a symbol is inferred
-    agenda = [query]  # Initialize the agenda with the query
 
-    # Step 1: Main loop
+# Backward Chaining Method
+def BC(kb, query):
+    # Initialize inferred symbols and relevant symbols
+    agenda = [query]
+    inferred = defaultdict(bool)
+    relevant = set()
+
+    #print(f"Initial Agenda: {agenda}") # Debug uncomment to see the initial agenda
+
     while agenda:
-        q = agenda.pop(0)  # Get the first symbol from the agenda
-        if q not in inferred or not inferred[q]:  # If q is not already inferred
+        q = agenda.pop()
+        #print(f"Processing query: {q}") #Debug uncomment to see the query being processed
+
+        if not inferred[q]:
             inferred[q] = True
-            # Step 2: Find premises that entail q
-            premises = [clause.split("=>")[0].strip() for clause in kb if "=>" in clause and q == clause.split("=>")[1].strip()]
-            for premise in premises:
-                # If all symbols in the premise are already inferred, return true
-                if all(symbol in inferred and inferred[symbol] for symbol in premise.split("&")):
-                    return True  # The query is proven true
+            relevant.add(q)
+            applicable_rules = []
+
+            # Identify rules where q is the consequent
+            for clause in kb:
+                if "=>" in clause:
+                    antecedent, consequent = clause.split("=>")
+                    consequent = consequent.strip()
+                    if q == consequent:
+                        applicable_rules.append((antecedent.strip(), consequent))
+
+           # print(f"Applicable rules for {q}: {applicable_rules}") # Debug uncomment to see the applicable rules
+            
+            # Check if all antecedents of the applicable rules are inferred
+            for antecedent, consequent in applicable_rules:
+                symbols = [s.strip() for s in antecedent.split('&')]
+                if all(inferred[s] for s in symbols):
+                    #print(f"All antecedents of {antecedent} are inferred.") # Debug uncomment to see the antecedents
+                    continue
                 else:
-                    agenda.append(premise)  # Add the premise to the agenda
-    # Step 3: If the loop completes without returning true, the query cannot be proven true
-    return False
-    
+                    for symbol in symbols:
+                        if not inferred[symbol]:
+                            agenda.append(symbol)
+                            relevant.add(symbol)
+                            #print(f"Adding {symbol} to agenda.") # Debug uncomment to see the symbol being added to agenda
+
+    #After agenda is empty, we check if the query was inferred
+    if inferred[query]:
+        return f"YES: {', '.join(sorted(relevant))}"
+    return "NO"
+
+
 def main():
     if len(sys.argv) != 3:
         print("Usage: python redo_3.py <filename> <search_method>")
         sys.exit(1)
 
     filename, search_method = sys.argv[1], sys.argv[2]
-    # print(f"Running with filename: {filename} and method: {search_method}")
+    # print(f"Running with filename: {filename} and method: {search_method}") # Debug uncomment to see the filename and search method
     clauses, query = parse_input(filename)
 
     if search_method == 'TT':
@@ -153,7 +185,7 @@ def main():
         result = FC(clauses, query)
         print(result)
     elif search_method == 'BC':
-        result = FC(clauses, query)
+        result = BC(clauses, query)
         print(result)
     else:
         print("Invalid search method")
