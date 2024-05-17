@@ -73,10 +73,9 @@ def TT(kb, query):
     else:
         return "NO"
     
-
 #Forward Chaining Method
 def FC(kb, query):
-    agenda = []
+    agenda = [query]
     inferred = defaultdict(bool)
     count = Counter()
 
@@ -128,13 +127,11 @@ def BC(kb, query):
     agenda = [query]
     inferred = defaultdict(bool)
     relevant = set()
-
     #print(f"Initial Agenda: {agenda}") # Debug uncomment to see the initial agenda
 
     while agenda:
-        q = agenda.pop()
+        q = agenda.pop(0)
         #print(f"Processing query: {q}") #Debug uncomment to see the query being processed
-
         if not inferred[q]:
             inferred[q] = True
             relevant.add(q)
@@ -147,7 +144,6 @@ def BC(kb, query):
                     consequent = consequent.strip()
                     if q == consequent:
                         applicable_rules.append((antecedent.strip(), consequent))
-
            # print(f"Applicable rules for {q}: {applicable_rules}") # Debug uncomment to see the applicable rules
             
             # Check if all antecedents of the applicable rules are inferred
