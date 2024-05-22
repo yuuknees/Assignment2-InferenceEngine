@@ -1,0 +1,7 @@
+TELL
+P || Q;
+Q => R;
+R & S => T;
+S;
+ASK
+T
