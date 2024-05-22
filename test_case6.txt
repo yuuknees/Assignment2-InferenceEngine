@@ -1,4 +1,4 @@
-TELL
-~P;
+TELL 
+P; Q; P || Q;
 ASK
-~P
+Q

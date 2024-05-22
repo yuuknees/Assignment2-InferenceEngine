@@ -1,5 +1,4 @@
 TELL
-P || Q;
-~P;
+P; ~Q; P || Q => R;
 ASK
-Q
+R
