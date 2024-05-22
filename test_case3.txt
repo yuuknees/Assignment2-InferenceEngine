@@ -1,4 +1,4 @@
 TELL
-X=>Y; Y=>Z; X;
+X=> Y; Y=> Z; X;
 ASK
 A
