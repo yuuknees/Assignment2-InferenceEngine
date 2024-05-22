@@ -1,4 +1,4 @@
 TELL
-P; ~Q; P & Q => X;
-ASK
-X
+P || Q; ~P;
+ASK 
+Q
