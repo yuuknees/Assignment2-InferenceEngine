@@ -1,0 +1,4 @@
+TELL
+X=>Y; Y=>Z; X;
+ASK
+A

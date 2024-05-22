@@ -1,4 +1,4 @@
 TELL
-p2​∧p3​∧p1​∧c∧b∧e∧a 
+A=>B; B=>C; A;
 ASK
-d
+C
